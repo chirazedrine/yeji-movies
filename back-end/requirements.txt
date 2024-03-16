@@ -1,4 +1,6 @@
 Flask
+SQLAlchemy
 Flask-SQLAlchemy
 requests
 python-dotenv
+Flask-Migrate
