@@ -40,7 +40,7 @@ const App: React.FC = () => {
       try {
         setLoading(true);
         const response = await axios.get('/api/movies');
-        setMovies(response.data);
+        setMovies(response.data.results || []);
       } catch (error) {
         console.error('Error fetching movies:', error);
       } finally {
