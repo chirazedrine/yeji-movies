@@ -1,23 +1,34 @@
-import requests, os
-from datetime import datetime
+from .models import Movie, Genre
 
-API_KEY = os.getenv('TMDB_API_KEY')
-BASE_URL = 'https://api.themoviedb.org/3'
+def filter_movies_by_genre(genre_name):
+    genre = Genre.query.filter_by(name=genre_name).first()
+    if not genre:
+        return []
 
-def fetch_movies():
-    url = f"{BASE_URL}/discover/movie?api_key={API_KEY}&sort_by=popularity.desc"
-    response = requests.get(url)
-    movies = response.json()['results']
-    return [{
-        'id': movie['id'],
-        'title': movie['title'],
-        'release_date': datetime.strptime(movie['release_date'], '%Y-%m-%d').date(),
-        'rating': movie['vote_average'],
-        'genre_ids': movie['genre_ids']
-    } for movie in movies]
+    genre_id = genre.id
+    movies = Movie.query.filter(Movie.genre_ids.contains(str(genre_id))).all()
+    return movies
 
-def fetch_genres():
-    url = f"{BASE_URL}/genre/movie/list?api_key={API_KEY}"
-    response = requests.get(url)
-    genres = response.json()['genres']
-    return [{'id': genre['id'], 'name': genre['name']} for genre in genres]
+def sort_movies_by_feature(feature, order='asc'):
+    if feature == 'release_date':
+        if order == 'asc':
+            movies = Movie.query.order_by(Movie.release_date).all()
+        else:
+            movies = Movie.query.order_by(Movie.release_date.desc()).all()
+    elif feature == 'rating':
+        if order == 'asc':
+            movies = Movie.query.order_by(Movie.rating).all()
+        else:
+            movies = Movie.query.order_by(Movie.rating.desc()).all()
+    else:
+        movies = Movie.query.all()
+
+    return movies
+
+from datetime import datetime, timedelta
+
+def get_movies_released_last_month():
+    today = datetime.now().date()
+    last_month = today - timedelta(days=30)
+    movies = Movie.query.filter(Movie.release_date >= last_month).order_by(Movie.rating.desc()).all()
+    return movies
