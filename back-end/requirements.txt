@@ -1,6 +1,4 @@
-Flask
-SQLAlchemy
-Flask-SQLAlchemy
-requests
-python-dotenv
-Flask-Migrate
+Flask==2.1.1
+Flask-SQLAlchemy==2.5.1
+requests==2.27.1
+python-dotenv==0.19.2
