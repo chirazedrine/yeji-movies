@@ -9,7 +9,7 @@ import Select from '@material-ui/core/Select';
 import MenuItem from '@material-ui/core/MenuItem';
 import Button from '@material-ui/core/Button';
 import MovieList from './components/MovieList';
-import { Movie } from './types';
+import { Movie, Genre } from './types';
 
 const useStyles = makeStyles((theme) =>
   createStyles({
@@ -27,21 +27,32 @@ const App: React.FC = () => {
   const [sortBy, setSortBy] = useState<string>('');
   const [order, setOrder] = useState<string>('asc');
   const [loading, setLoading] = useState<boolean>(true);
+  const [genres, setGenres] = useState<Genre[]>([]);
+  const [showBookmarked, setShowBookmarked] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchMovies = async () => {
       try {
         setLoading(true);
         const response = await axios.get('/api/movies');
-        setMovies(response.data.results || []);
+        setMovies(response.data || []);
       } catch (error) {
         console.error('Error fetching movies:', error);
       } finally {
         setLoading(false);
       }
     };
+    const fetchGenres = async () => {
+      try {
+        const response = await axios.get('/api/genres');
+        setGenres(response.data || []);
+      } catch (error) {
+        console.error('Error fetching genres:', error);
+      }
+    };
 
     fetchMovies();
+    fetchGenres();
   }, []);
 
   const handleGenreChange = (event: React.ChangeEvent<{ value: unknown }>) => {
@@ -49,6 +60,7 @@ const App: React.FC = () => {
   };
 
   const handleSortChange = (event: React.ChangeEvent<{ value: unknown }>) => {
+    console.log("genre change", event.target.value)
     setSortBy(event.target.value as string);
   };
 
@@ -58,8 +70,14 @@ const App: React.FC = () => {
 
   const filterMovies = () => {
     if (!genre) return movies;
-    return movies.filter((movie) => movie.genre_ids.includes(parseInt(genre)));
-  };
+    console.log("Filtering for genre:", genre);
+    return movies.filter((movie) =>
+        movie.genres.some((g) => {
+            console.log("Comparing with movie genre ID:", g.id);
+            return g.id.toString() === genre;
+        })
+    );
+};
 
   const sortMovies = () => {
     if (!sortBy) return filterMovies();
@@ -79,7 +97,7 @@ const App: React.FC = () => {
 
   const handleBookmark = async (movieId: number) => {
     try {
-      const response = await axios.post(`/bookmark/${movieId}`);
+      const response = await axios.post(`/api/bookmark/${movieId}`);
       if (response.data.success) {
         const updatedMovies = movies.map((movie) => {
           if (movie.id === movieId) {
@@ -94,6 +112,19 @@ const App: React.FC = () => {
     }
   };
 
+  const toggleBookmarked = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get('/api/bookmarked'); 
+      setMovies(response.data || []);
+      setShowBookmarked(!showBookmarked);
+    } catch (error) {
+      console.error('Error fetching bookmarked movies:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Container maxWidth="md">
       <Typography variant="h4" component="h1" gutterBottom>
@@ -102,33 +133,16 @@ const App: React.FC = () => {
 
       <FormControl className={classes.formControl}>
         <InputLabel id="genre-label">Filter by Genre</InputLabel>
-        <Select
-          labelId="genre-label"
-          id="genre"
-          value={genre}
-          onChange={handleGenreChange}
-        >
-          <MenuItem value="">All</MenuItem>
-          <MenuItem value="28">Action</MenuItem>
-          <MenuItem value="12">Adventure</MenuItem>
-          <MenuItem value="16">Animation</MenuItem>
-          <MenuItem value="35">Comedy</MenuItem>
-          <MenuItem value="80">Crime</MenuItem>
-          <MenuItem value="99">Documentary</MenuItem>
-          <MenuItem value="18">Drama</MenuItem>
-          <MenuItem value="10751">Family</MenuItem>
-          <MenuItem value="14">Fantasy</MenuItem>
-          <MenuItem value="36">History</MenuItem>
-          <MenuItem value="27">Horror</MenuItem>
-          <MenuItem value="10402">Music</MenuItem>
-          <MenuItem value="9648">Mystery</MenuItem>
-          <MenuItem value="10749">Romance</MenuItem>
-          <MenuItem value="878">Science Fiction</MenuItem>
-          <MenuItem value="10770">TV Movie</MenuItem>
-          <MenuItem value="53">Thriller</MenuItem>
-          <MenuItem value="10752">War</MenuItem>
-          <MenuItem value="37">Western</MenuItem>
-        </Select>
+          <Select
+            labelId="genre-label"
+            id="genre-select"
+            value={genre}
+            onChange={handleGenreChange}
+          >
+            {genres.map((genre: Genre) => (
+              <MenuItem key={genre.id} value={genre.id}>{genre.name}</MenuItem>
+            ))}
+          </Select>
       </FormControl>
 
       <FormControl className={classes.formControl}>
@@ -165,6 +179,9 @@ const App: React.FC = () => {
         onClick={() => window.location.reload()}
       >
         {loading ? 'Loading...' : 'Refresh'}
+      </Button>
+      <Button onClick={toggleBookmarked}>
+        {showBookmarked ? 'Show All Movies' : 'Show Bookmarked Movies'}
       </Button>
 
       {loading ? (

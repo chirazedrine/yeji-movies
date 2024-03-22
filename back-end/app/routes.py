@@ -53,7 +53,7 @@ def get_genres():
     genres = Genre.query.all()
     return jsonify([{'id': genre.id, 'name': genre.name} for genre in genres]), 200
 
-@main.route('/bookmark/<int:movie_id>', methods=['POST'])
+@main.route('/api/bookmark/<int:movie_id>', methods=['POST'])
 def toggle_bookmark(movie_id):
     movie = Movie.query.get(movie_id)
     if movie:
@@ -62,7 +62,7 @@ def toggle_bookmark(movie_id):
         return jsonify({"success": True, "bookmarked": movie.bookmarked}), 200
     return jsonify({"error": "Movie not found"}), 404
 
-@main.route('/bookmarked', methods=['GET'])
+@main.route('/api/bookmarked', methods=['GET'])
 def get_bookmarked_movies():
     bookmarked_movies = Movie.query.filter_by(bookmarked=True).all()
     return jsonify([{"id": movie.id, 
