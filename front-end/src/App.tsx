@@ -9,14 +9,7 @@ import Select from '@material-ui/core/Select';
 import MenuItem from '@material-ui/core/MenuItem';
 import Button from '@material-ui/core/Button';
 import MovieList from './components/MovieList';
-
-interface Movie {
-  id: number;
-  title: string;
-  release_date: string;
-  rating: number;
-  genre_ids: number[];
-}
+import { Movie } from './types';
 
 const useStyles = makeStyles((theme) =>
   createStyles({
@@ -86,10 +79,18 @@ const App: React.FC = () => {
 
   const handleBookmark = async (movieId: number) => {
     try {
-      await axios.put(`/api/bookmark/${movieId}`);
-      console.log('Movie bookmarked successfully');
+      const response = await axios.post(`/bookmark/${movieId}`);
+      if (response.data.success) {
+        const updatedMovies = movies.map((movie) => {
+          if (movie.id === movieId) {
+            return { ...movie, bookmarked: !movie.bookmarked };
+          }
+          return movie;
+        });
+        setMovies(updatedMovies);
+      }
     } catch (error) {
-      console.error('Error bookmarking movie:', error);
+      console.error('Error toggling bookmark:', error);
     }
   };
 
